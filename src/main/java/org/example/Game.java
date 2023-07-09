@@ -38,6 +38,7 @@ public class Game {
     private int pause = 5000;
     private int stop = 0;
     private ArrayList<Dot> dots;
+    private ArrayList<Dot> dangers;
 
     private Dot target;
 
@@ -47,7 +48,7 @@ public class Game {
 
     private Dot prevPlayer;
 
-    private Date lastTime;
+    private Date lastTime = new Date();
 
     private BufferedImage img;
     public Game(){
@@ -90,6 +91,7 @@ public class Game {
     }
 
     public void searchPlatforms(Robot r){
+        dangers = new ArrayList<Dot>();
         dots = new ArrayList<Dot>();
         Color previous = null, now = null;
         int x = 0, y;
@@ -103,15 +105,23 @@ public class Game {
                 else{
                     if(Math.abs(now.getBlue() + now.getRed() + now.getGreen() - previous.getRed() - previous.getBlue() - previous.getGreen()) > 300){
                         boolean danger = false;
-                        for(int i = x - 100; i < x + 100; i++){
-                            for(int j = y - 40; j < y + 40; j++){
-                                if(now.equals(new Color(244,180,83)) || now.equals(new Color(208,208,208))){
+                        boolean grey = false;
+                        for(int i = Math.max(x - 70, 0); i < x + 70 && i < 600; i++){
+                            for(int j = Math.max(y - 20, 0); j < y + 20 && j < 1080; j++){
+                                Color around = new Color(img.getRGB(i, j));
+                                if(around.equals(new Color(244,180,83))){
                                     danger = true;
+                                }
+                                if(around.getBlue() == around.getRed() && around.getGreen() > 150 && around.getBlue() < 250){
+                                    grey = true;
                                 }
                             }
                         }
-                        if(!danger){
+                        if(!danger && !grey){
                             dots.add(new Dot(x, y));
+                        }
+                        if(danger){
+                            dangers.add(new Dot(x, y));
                         }
                         y = y + 30;
                     }
@@ -125,6 +135,7 @@ public class Game {
 
     public void searchDownPlatforms(Robot r){
         dots = new ArrayList<Dot>();
+        dangers = new ArrayList<Dot>();
         Color previous = null, now = null;
         int x = 0, y;
         if(player == null){
@@ -140,15 +151,23 @@ public class Game {
                 else{
                     if(Math.abs(now.getBlue() + now.getRed() + now.getGreen() - previous.getRed() - previous.getBlue() - previous.getGreen()) > 300){
                         boolean danger = false;
-                        for(int i = x - 150; i < x + 150; i++){
-                            for(int j = y - 60; j < y + 60; j++){
-                                if(now.equals(new Color(244,180,83)) || (now.getBlue() == now.getRed() && now.getBlue() < 250 && now.getBlue() > 150)){
+                        boolean grey = false;
+                        for(int i = Math.max(x - 70, 0); i < x + 70 && i < 600; i++){
+                            for(int j = Math.max(y - 20, 0); j < y + 20 && j < 1080; j++){
+                                Color around = new Color(img.getRGB(i, j));
+                                if(around.equals(new Color(244,180,83))){
                                     danger = true;
+                                }
+                                if(around.getBlue() == around.getRed() && around.getGreen() > 150 && around.getBlue() < 250){
+                                    grey = true;
                                 }
                             }
                         }
-                        if(!danger){
+                        if(!danger && !grey){
                             dots.add(new Dot(x, y));
+                        }
+                        if(danger){
+                            dangers.add(new Dot(x, y));
                         }
                         y = y + 30;
                     }
@@ -238,14 +257,38 @@ public class Game {
             this.r = r;
         }
         public void run() {
-            for(int i = 0; i < 50; i++) {
+            if(target == null || player == null){
+                return;
+            }
+            boolean left = false;
+            boolean right = false;
+            boolean avoid = false;
+            for(Dot dot : dangers){
+                if(Math.abs((dot.x - player.x) + (dot.y - player.y)) < 100){
+                    avoid = true;
+                    if(player.x < dot.x){
+                        left = true;
+                    }
+                    else{
+                        right = true;
+                    }
+                }
+            }
+            if(!avoid){
                 if (target.x - player.x < -15) {
+                    left = true;
+                } else if (target.x - player.x > 15) {
+                    right = true;
+                }
+            }
+            for(int i = 0; i < 50; i++) {
+                if (left) {
                     r.keyPress(KeyEvent.VK_A);
                     //r.mousePress(InputEvent.BUTTON1_MASK);
                     r.delay(1);
                     //r.mouseRelease(InputEvent.BUTTON1_MASK);
                     r.keyRelease(KeyEvent.VK_A);
-                } else if (target.x - player.x > 15) {
+                } else if (right) {
                     r.keyPress(KeyEvent.VK_D);
                     //r.mousePress(InputEvent.BUTTON1_MASK);
                     r.delay(1);
@@ -292,6 +335,11 @@ public class Game {
                 (new pressThread(r)).start();
                 end = new Date();
                 System.out.println(end.getTime() - start.getTime());
+                try {
+                    Thread.sleep(60);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
