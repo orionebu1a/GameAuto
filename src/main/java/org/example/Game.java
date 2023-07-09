@@ -58,11 +58,11 @@ public class Game {
         int x = 0, y;
         if(prevPlayer != null){
             for(int i = Math.max(prevPlayer.x - 250, 0); i < prevPlayer.x + 250 && i < 600; i ++){
-                for(int j = prevPlayer.y - 250; j < prevPlayer.y + 250 && j < 1080; j ++){
+                for(int j = Math.max(prevPlayer.y - 250, 0); j < prevPlayer.y + 250 && j < 1080; j ++){
                     Color now = new Color(img.getRGB(i, j));
                     if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
-                        Color second = new Color(img.getRGB(i, j + 12));
-                        if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
+                        Color second = new Color(img.getRGB(Math.min(i + 38, 599), j));
+                        if (second.getRed() == 0 && now.getRed() == 0) {
                             prevPlayer = player;
                             player = new Dot(i + 20, j + 30);
                         }
@@ -76,8 +76,8 @@ public class Game {
                 while (y < 1080) {
                     Color now = new Color(img.getRGB(x, y));
                     if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
-                        Color second = new Color(img.getRGB(x, y + 12));
-                        if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
+                        Color second = new Color(img.getRGB(Math.min(x + 38, 599), y));
+                        if (second.getRed() == 0 && now.getRed() == 0) {
                             prevPlayer = player;
                             player = new Dot(x + 20, y + 30);
                         }
@@ -215,6 +215,20 @@ public class Game {
         }
     }
 
+    public class shootThread extends Thread {
+        private Robot r;
+        public shootThread(Robot r){
+            this.r = r;
+        }
+        public void run() {
+            for(int i = 0; i < 50; i++) {
+                r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(1);
+                r.mouseRelease(InputEvent.BUTTON1_MASK);
+            }
+        }
+    }
+
     public class updateThread extends Thread {
         private Robot r;
         public updateThread(Robot r){
@@ -290,8 +304,14 @@ public class Game {
                 System.out.println(start.getTime() - end.getTime());
                 start = new Date();
                 (new pressThread(r)).start();
+                (new shootThread(r)).start();
                 end = new Date();
                 System.out.println(end.getTime() - start.getTime());
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
