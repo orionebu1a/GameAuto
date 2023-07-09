@@ -34,6 +34,7 @@ public class Game {
             this.y = y;
         }
     }
+    private int pause = 5000;
     private int stop = 0;
     private ArrayList<Dot> dots;
 
@@ -50,25 +51,55 @@ public class Game {
 
     }
 
+    public void searchPlayer(Robot r){
+        int x = 770, y;
+        BufferedImage screen = r.createScreenCapture(new Rectangle(1920, 1080));
+        if(prevPlayer != null){
+            for(int i = prevPlayer.x - 70; i < prevPlayer.x + 70; i++){
+                for(int j = prevPlayer.y - 70; j < prevPlayer.y + 70; j++){
+                    Color now = new Color(screen.getRGB(i, j));
+                    if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
+                        Color second = new Color(screen.getRGB(i + 43, j));
+                        if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
+                            prevPlayer = player;
+                            player = new Dot(i + 20, j + 30);
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            while (x <= 1140) {
+                y = 400;
+                while (y <= 1000) {
+                    Color now = new Color(screen.getRGB(x, y));
+                    if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
+                        Color second = new Color(screen.getRGB(x + 43, y));
+                        if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
+                            prevPlayer = player;
+                            player = new Dot(x + 20, y + 30);
+                        }
+                    }
+                    y++;
+                }
+                x += 1;
+            }
+        }
+    }
+
     public void searchPlatforms(Robot r){
         dots = new ArrayList<Dot>();
         Color previous = null, now = null;
-        int x = 700, y;
+        int x = 770, y;
         BufferedImage screen = r.createScreenCapture(new Rectangle(1920, 1080));
-        while(x <= 1200){
-            y = 205;
-            while(y <= 1029){
+        while(x <= 1140){
+            y = 400;
+            while(y <= 1000){
                 now = new Color(screen.getRGB(x, y));
                 if(previous == null){
                     previous = now;
                 }
                 else{
-                    if(now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0){
-                        Color second = new Color(screen.getRGB(x + 38, y));
-                        if(second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0){
-                            player = new Dot(x + 20, y + 30);
-                        }
-                    }
                     if(Math.abs(now.getBlue() + now.getRed() + now.getGreen() - previous.getRed() - previous.getBlue() - previous.getGreen()) > 300){
                         boolean danger = false;
                         for(int i = x - 70; i < x + 70; i++){
@@ -87,7 +118,7 @@ public class Game {
                 }
                 y++;
             }
-            x = x + 1;
+            x = x + 50;
         }
     }
 
@@ -95,23 +126,53 @@ public class Game {
         int ymin = 0;
         int xmin = 1000;
         prevTarget = target;
+        if(player == null){
+            return;
+        }
         for(int i = 0; i < dots.size(); i++){
             if(dots.get(i).y > ymin
                     && Math.abs((dots.get(i).y - player.y) + (dots.get(i).x - player.x)) > 200
-                    && dots.get(i).y < 900 && dots.get(i).y > 400
-                    && Math.abs(dots.get(i).y - player.y) < 400){
-                /*if(prevTarget != null){
-                    if(dots.get(i).y < prevTarget.y){
-                        ymin = dots.get(i).y;
-                        xmin = Math.abs(dots.get(i).x - player.x);
-                        target = dots.get(i);
-                    }
-                }
-                else{*/
-                    ymin = dots.get(i).y;
-                    xmin = Math.abs(dots.get(i).x - player.x);
-                    target = dots.get(i);
-                //}
+                    && Math.abs(dots.get(i).y - player.y) < 320){
+                ymin = dots.get(i).y;
+                xmin = Math.abs(dots.get(i).x - player.x);
+                target = new Dot(dots.get(i).x, dots.get(i).y);
+            }
+        }
+    }
+
+    public void updateTarget(Robot r){
+        if(target != null && player != null){
+            Date newDate = new Date();
+            if(Math.abs(target.y - player.y + target.x - target.y) < 100
+                    || newDate.getTime() - lastTime.getTime() > 5000){
+                lastTime = new Date();
+                choseTarget();
+            }
+        }
+        else{
+            lastTime = new Date();
+            choseTarget();
+        }
+    }
+
+    public void pressKeys(Robot r){
+        for(int i = 0; i < 5; i++) {
+            if (target.x - player.x < -20) {
+                r.keyPress(KeyEvent.VK_A);
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(5);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.keyRelease(KeyEvent.VK_A);
+            } else if (target.x - player.x > 20) {
+                r.keyPress(KeyEvent.VK_D);
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(5);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.keyRelease(KeyEvent.VK_D);
+            } else {
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(5);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
         }
     }
@@ -123,7 +184,7 @@ public class Game {
         } catch (AWTException e) {
             throw new RuntimeException(e);
         }
-        r.delay(10000);
+        r.delay(pause);
         while(true){
             if(player != null){
                 System.out.printf("player: %d, %d\n", player.x, player.y);
@@ -135,44 +196,17 @@ public class Game {
                 break;
             }
             if(r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
+                Date start = new Date();
                 searchPlatforms(r);
-                if(target != null && player != null){
-                    Date newDate = new Date();
-                    if(Math.abs(target.y - player.y + target.x - target.y) < 100 || newDate.getTime() - lastTime.getTime() > 2000){
-                        lastTime = new Date();
-                        choseTarget();
-                    }
-                }
-                else{
-                    lastTime = new Date();
-                    choseTarget();
-                }
+                searchPlayer(r);
+                updateTarget(r);
+                Date end = new Date();
+                System.out.println(start.getTime() - end.getTime());
                 if(player == null || target == null){
                     continue;
                 }
-                for(int i = 0; i < 10; i++) {
-                    if (target.x < player.x) {
-                        r.keyPress(KeyEvent.VK_A);
-                        //r.mousePress(InputEvent.BUTTON1_MASK);
-                        r.delay(1);
-                        //r.mouseRelease(InputEvent.BUTTON1_MASK);
-                        r.keyRelease(KeyEvent.VK_A);
-                    } else if (target.x >= player.x) {
-                        r.keyPress(KeyEvent.VK_D);
-                        //r.mousePress(InputEvent.BUTTON1_MASK);
-                        r.delay(1);
-                        //r.mouseRelease(InputEvent.BUTTON1_MASK);
-                        r.keyRelease(KeyEvent.VK_D);
-                    } else {
-                        //r.mousePress(InputEvent.BUTTON1_MASK);
-                        r.delay(1);
-                        //r.mouseRelease(InputEvent.BUTTON1_MASK);
-                    }
-                }
+                pressKeys(r);
             }
         }
-
     }
-
-
 }
