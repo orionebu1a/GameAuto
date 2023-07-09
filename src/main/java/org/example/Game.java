@@ -47,19 +47,20 @@ public class Game {
     private Dot prevPlayer;
 
     private Date lastTime;
+
+    private BufferedImage img;
     public Game(){
 
     }
 
     public void searchPlayer(Robot r){
         int x = 770, y;
-        BufferedImage screen = r.createScreenCapture(new Rectangle(1920, 1080));
         if(prevPlayer != null){
-            for(int i = prevPlayer.x - 70; i < prevPlayer.x + 70; i++){
-                for(int j = prevPlayer.y - 70; j < prevPlayer.y + 70; j++){
-                    Color now = new Color(screen.getRGB(i, j));
+            for(int i = prevPlayer.x - 100; i < prevPlayer.x + 100; i = i + 5){
+                for(int j = prevPlayer.y - 100; j < prevPlayer.y + 100; j = j + 5){
+                    Color now = new Color(img.getRGB(i, j));
                     if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
-                        Color second = new Color(screen.getRGB(i + 43, j));
+                        Color second = new Color(img.getRGB(i + 43, j));
                         if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
                             prevPlayer = player;
                             player = new Dot(i + 20, j + 30);
@@ -72,17 +73,17 @@ public class Game {
             while (x <= 1140) {
                 y = 400;
                 while (y <= 1000) {
-                    Color now = new Color(screen.getRGB(x, y));
+                    Color now = new Color(img.getRGB(x, y));
                     if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
-                        Color second = new Color(screen.getRGB(x + 43, y));
+                        Color second = new Color(img.getRGB(x + 38, y));
                         if (second.getRed() == 0 && second.getBlue() == 0 && second.getGreen() == 0) {
                             prevPlayer = player;
                             player = new Dot(x + 20, y + 30);
                         }
                     }
-                    y++;
+                    y = y + 5;
                 }
-                x += 1;
+                x = x + 5;
             }
         }
     }
@@ -91,11 +92,10 @@ public class Game {
         dots = new ArrayList<Dot>();
         Color previous = null, now = null;
         int x = 770, y;
-        BufferedImage screen = r.createScreenCapture(new Rectangle(1920, 1080));
         while(x <= 1140){
             y = 400;
-            while(y <= 1000){
-                now = new Color(screen.getRGB(x, y));
+            while(y <= 900){
+                now = new Color(img.getRGB(x, y));
                 if(previous == null){
                     previous = now;
                 }
@@ -143,7 +143,7 @@ public class Game {
     public void updateTarget(Robot r){
         if(target != null && player != null){
             Date newDate = new Date();
-            if(Math.abs(target.y - player.y + target.x - target.y) < 100
+            if(Math.abs(target.y - player.y + target.x - player.x) < 100
                     || newDate.getTime() - lastTime.getTime() > 5000){
                 lastTime = new Date();
                 choseTarget();
@@ -157,22 +157,22 @@ public class Game {
 
     public void pressKeys(Robot r){
         for(int i = 0; i < 5; i++) {
-            if (target.x - player.x < -20) {
+            if (target.x - player.x < -10) {
                 r.keyPress(KeyEvent.VK_A);
-                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.mousePress(InputEvent.BUTTON1_MASK);
                 r.delay(5);
-                //r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.mouseRelease(InputEvent.BUTTON1_MASK);
                 r.keyRelease(KeyEvent.VK_A);
-            } else if (target.x - player.x > 20) {
+            } else if (target.x - player.x > 10) {
                 r.keyPress(KeyEvent.VK_D);
-                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.mousePress(InputEvent.BUTTON1_MASK);
                 r.delay(5);
-                //r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.mouseRelease(InputEvent.BUTTON1_MASK);
                 r.keyRelease(KeyEvent.VK_D);
             } else {
-                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.mousePress(InputEvent.BUTTON1_MASK);
                 r.delay(5);
-                //r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
         }
     }
@@ -197,6 +197,7 @@ public class Game {
             }
             if(r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
                 Date start = new Date();
+                img = r.createScreenCapture(new Rectangle(1920, 1080));
                 searchPlatforms(r);
                 searchPlayer(r);
                 updateTarget(r);
