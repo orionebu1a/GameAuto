@@ -54,10 +54,10 @@ public class Game {
     }
 
     public void searchPlayer(Robot r){
-        int x = 770, y;
+        int x = 0, y;
         if(prevPlayer != null){
-            for(int i = prevPlayer.x - 100; i < prevPlayer.x + 100; i = i + 5){
-                for(int j = prevPlayer.y - 100; j < prevPlayer.y + 100; j = j + 5){
+            for(int i = prevPlayer.x - 150; i < prevPlayer.x + 150 &&  i < 1920; i ++){
+                for(int j = prevPlayer.y - 150; j < prevPlayer.y + 150 && j < 1080; j ++){
                     Color now = new Color(img.getRGB(i, j));
                     if (now.getBlue() == 0 && now.getRed() == 0 && now.getGreen() == 0) {
                         Color second = new Color(img.getRGB(i + 43, j));
@@ -70,7 +70,7 @@ public class Game {
             }
         }
         else {
-            while (x <= 1140) {
+            while (x < 600) {
                 y = 400;
                 while (y <= 1000) {
                     Color now = new Color(img.getRGB(x, y));
@@ -91,10 +91,10 @@ public class Game {
     public void searchPlatforms(Robot r){
         dots = new ArrayList<Dot>();
         Color previous = null, now = null;
-        int x = 770, y;
-        while(x <= 1140){
+        int x = 0, y;
+        while(x < 600){
             y = 400;
-            while(y <= 900){
+            while(y <= 850){
                 now = new Color(img.getRGB(x, y));
                 if(previous == null){
                     previous = now;
@@ -132,7 +132,7 @@ public class Game {
         for(int i = 0; i < dots.size(); i++){
             if(dots.get(i).y > ymin
                     && Math.abs((dots.get(i).y - player.y) + (dots.get(i).x - player.x)) > 200
-                    && Math.abs(dots.get(i).y - player.y) < 320){
+                    && Math.abs(dots.get(i).y - player.y) < 400){
                 ymin = dots.get(i).y;
                 xmin = Math.abs(dots.get(i).x - player.x);
                 target = new Dot(dots.get(i).x, dots.get(i).y);
@@ -156,23 +156,23 @@ public class Game {
     }
 
     public void pressKeys(Robot r){
-        for(int i = 0; i < 5; i++) {
+        for(int i = 0; i < 10; i++) {
             if (target.x - player.x < -10) {
                 r.keyPress(KeyEvent.VK_A);
-                r.mousePress(InputEvent.BUTTON1_MASK);
-                r.delay(5);
-                r.mouseRelease(InputEvent.BUTTON1_MASK);
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(1);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
                 r.keyRelease(KeyEvent.VK_A);
             } else if (target.x - player.x > 10) {
                 r.keyPress(KeyEvent.VK_D);
-                r.mousePress(InputEvent.BUTTON1_MASK);
-                r.delay(5);
-                r.mouseRelease(InputEvent.BUTTON1_MASK);
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(1);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
                 r.keyRelease(KeyEvent.VK_D);
             } else {
-                r.mousePress(InputEvent.BUTTON1_MASK);
-                r.delay(5);
-                r.mouseRelease(InputEvent.BUTTON1_MASK);
+                //r.mousePress(InputEvent.BUTTON1_MASK);
+                r.delay(1);
+                //r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
         }
     }
@@ -197,7 +197,7 @@ public class Game {
             }
             if(r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
                 Date start = new Date();
-                img = r.createScreenCapture(new Rectangle(1920, 1080));
+                img = r.createScreenCapture(new Rectangle(660, 0, 600, 1080));
                 searchPlatforms(r);
                 searchPlayer(r);
                 updateTarget(r);
@@ -206,7 +206,11 @@ public class Game {
                 if(player == null || target == null){
                     continue;
                 }
+                start = new Date();
                 pressKeys(r);
+                end = new Date();
+                System.out.println(end.getTime() - start.getTime());
+
             }
         }
     }
