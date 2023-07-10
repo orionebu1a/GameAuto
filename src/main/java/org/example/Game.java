@@ -173,9 +173,10 @@ public class Game {
         }
         for(int i = 0; i < dots.size(); i++){
             if(dots.get(i).y > ymin
-                    && Math.abs((dots.get(i).y - player.y) + (dots.get(i).x - player.x)) > 100
+                    && Math.abs((dots.get(i).y - player.y) + (dots.get(i).x - player.x)) > 150
                     && Math.abs(dots.get(i).y - player.y) < 400
-                    && dots.get(i).y - player.y <= 0){
+                    && dots.get(i).y - player.y <= 0
+                    && dots.get(i).y > 650){
                 ymin = dots.get(i).y;
                 prevTarget = target;
                 target = new Dot(dots.get(i).x, dots.get(i).y);
@@ -184,8 +185,14 @@ public class Game {
     }
 
     public void updateTarget(Robot r){
-        downChosen = false;
-        choseTarget();
+        if(target == null || player == null){
+            downChosen = false;
+            choseTarget();
+        }
+        if(Math.abs(target.y + target.x - player.y - player.x) < 20){
+            downChosen = false;
+            choseTarget();
+        }
     }
 
     public void updateDownTarget(Robot r){
@@ -226,17 +233,12 @@ public class Game {
                 if(player == null){
                     continue;
                 }
-                if (player.y - prevPlayer.y >= 15) {
-                    searchDownPlatforms(r);
-                    updateDownTarget(r);
-                } else {
-                    searchPlatforms(r);
-                    updateTarget(r);
-                }
+                searchPlatforms(r);
+                updateTarget(r);
                 Date end = new Date();
                 System.out.printf("\n%d\n", end.getTime() - start.getTime());
                 try {
-                    Thread.sleep(30);
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
