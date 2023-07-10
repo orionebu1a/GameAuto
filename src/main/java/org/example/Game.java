@@ -28,11 +28,11 @@ public class Game {
 
     private Dot prevTarget;
 
-    private Dot player;
+    private Dot player = null;
 
-    private Dot prevPlayer;
+    private Dot prevPlayer = null;
 
-    private Date lastTime;
+    private Date lastTime = null;
 
     private BufferedImage img;
     public Game(){
@@ -70,10 +70,10 @@ public class Game {
         }
     }
 
-    public void setPlayer(Dot player){
+    public void setPlayer(Dot p){
         synchronized(this){
-            this.prevPlayer = player;
-            this.player = player;
+            this.prevPlayer = this.player;
+            this.player = p;
         }
     }
 
@@ -91,14 +91,14 @@ public class Game {
                 else{
                     if(Math.abs(now.getBlue() + now.getRed() + now.getGreen() - previous.getRed() - previous.getBlue() - previous.getGreen()) > 300){
                         boolean danger = false;
-                        for(int i = Math.max(x - 100, 0); i < Math.min(559, x + 100); i++){
-                            for(int j = Math.max(0, y - 40); j < Math.min(y + 40, 1079); j++){
+                        /*for(int i = Math.max(x - 70, 0); i < Math.min(559, x + 70); i++){
+                            for(int j = Math.max(0, y - 30); j < Math.min(y + 30, 1079); j++){
                                 Color around = new Color(img.getRGB(i, j));
                                 if(around.equals(new Color(244,180,83)) || around.equals(new Color(208,208,208))){
                                     danger = true;
                                 }
                             }
-                        }
+                        }*/
                         if(!danger){
                             dots.add(new Dot(x, y));
                         }
@@ -129,14 +129,14 @@ public class Game {
                 else{
                     if(Math.abs(now.getBlue() + now.getRed() + now.getGreen() - previous.getRed() - previous.getBlue() - previous.getGreen()) > 300){
                         boolean danger = false;
-                        for(int i = Math.max(x - 100, 0); i < Math.min(559, x + 100); i++){
-                            for(int j = Math.max(0, y - 40); j < Math.min(y + 40, 1079); j++){
+                        /*for(int i = Math.max(x - 70, 0); i < Math.min(559, x + 70); i++){
+                            for(int j = Math.max(0, y - 30); j < Math.min(y + 30, 1079); j++){
                                 Color around = new Color(img.getRGB(i, j));
                                 if(around.equals(new Color(244,180,83)) || around.equals(new Color(208,208,208))){
                                     danger = true;
                                 }
                             }
-                        }
+                        }*/
                         if(!danger){
                             dots.add(new Dot(x, y));
                         }
@@ -174,7 +174,8 @@ public class Game {
         for(int i = 0; i < dots.size(); i++){
             if(dots.get(i).y > ymin
                     && Math.abs((dots.get(i).y - player.y) + (dots.get(i).x - player.x)) > 100
-                    && Math.abs(dots.get(i).y - player.y) < 350){
+                    && Math.abs(dots.get(i).y - player.y) < 400
+                    && dots.get(i).y - player.y <= 0){
                 ymin = dots.get(i).y;
                 prevTarget = target;
                 target = new Dot(dots.get(i).x, dots.get(i).y);
@@ -184,18 +185,7 @@ public class Game {
 
     public void updateTarget(Robot r){
         downChosen = false;
-        if(target != null && player != null){
-            Date newDate = new Date();
-            if(Math.abs(target.y - player.y + target.x - player.x) < 50
-                    || newDate.getTime() - lastTime.getTime() > 10000){
-                lastTime = new Date();
-                choseTarget();
-            }
-        }
-        else{
-            lastTime = new Date();
-            choseTarget();
-        }
+        choseTarget();
     }
 
     public void updateDownTarget(Robot r){
@@ -212,9 +202,13 @@ public class Game {
         }
         public void run() {
             while(runned) {
-                r.mousePress(InputEvent.BUTTON1_MASK);
-                r.delay(10);
-                r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.keyPress(KeyEvent.VK_SPACE);
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                r.keyPress(KeyEvent.VK_SPACE);
             }
         }
     }
@@ -226,17 +220,25 @@ public class Game {
         }
         public void run() {
             while(runned) {
+                Date start = new Date();
                 img = r.createScreenCapture(new Rectangle(660, 0, 600, 1080));
                 searchPlayer(r);
                 if(player == null){
                     continue;
                 }
-                if (prevPlayer.y - player.y >= 6) {
+                if (player.y - prevPlayer.y >= 15) {
                     searchDownPlatforms(r);
                     updateDownTarget(r);
                 } else {
                     searchPlatforms(r);
                     updateTarget(r);
+                }
+                Date end = new Date();
+                System.out.printf("\n%d\n", end.getTime() - start.getTime());
+                try {
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -252,18 +254,18 @@ public class Game {
                 if(target == null || player == null){
                     continue;
                 }
-                if (target.x - player.x < -15) {
+                if (target.x - player.x < -5) {
                     r.keyPress(KeyEvent.VK_A);
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(5);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                     r.keyRelease(KeyEvent.VK_A);
-                } else if (target.x - player.x > 15) {
+                } else if (target.x - player.x > 5) {
                     r.keyPress(KeyEvent.VK_D);
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(5);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -294,11 +296,6 @@ public class Game {
             if(target != null){
                 System.out.printf("target: %d, %d\n", target.x, target.y);
             }
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             if (!r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
                 runned = false;
             }
@@ -306,9 +303,14 @@ public class Game {
                 if(!runned){
                     (new UpdateThread(r)).start();
                     (new PressThread(r)).start();
-                    //(new ShootThread(r)).start();
+                    (new ShootThread(r)).start();
                     runned = true;
                 }
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
     }
