@@ -1,29 +1,13 @@
 package org.example;
 
-import net.bytebuddy.build.Plugin;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.ie.InternetExplorerDriver;
 
-import javax.swing.*;
+
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-
-import java.awt.event.KeyAdapter;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
-
-
-import static com.sun.java.accessibility.util.AWTEventMonitor.addKeyListener;
 
 public class Game {
     public class Dot{
@@ -34,6 +18,7 @@ public class Game {
             this.y = y;
         }
     }
+    private boolean runned = false;
     private boolean downChosen = false;
     private int pause = 5000;
     private int stop = 0;
@@ -215,60 +200,63 @@ public class Game {
         }
     }
 
-    public class shootThread extends Thread {
+    public class ShootThread extends Thread {
         private Robot r;
-        public shootThread(Robot r){
+        public ShootThread(Robot r){
             this.r = r;
         }
         public void run() {
-            for(int i = 0; i < 50; i++) {
+            while(runned) {
                 r.mousePress(InputEvent.BUTTON1_MASK);
-                r.delay(1);
+                r.delay(10);
                 r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
         }
     }
 
-    public class updateThread extends Thread {
+    public class UpdateThread extends Thread {
         private Robot r;
-        public updateThread(Robot r){
+        public UpdateThread(Robot r){
             this.r = r;
         }
         public void run() {
-            if(player.y <= prevPlayer.y){
-                searchDownPlatforms(r);
-                updateDownTarget(r);
-            }
-            else{
-                searchPlatforms(r);
-                updateTarget(r);
+            while(runned) {
+                img = r.createScreenCapture(new Rectangle(660, 0, 600, 1080));
+                searchPlayer(r);
+                if(player == null){
+                    continue;
+                }
+                if (prevPlayer.y - player.y >= 12) {
+                    searchDownPlatforms(r);
+                    updateDownTarget(r);
+                } else {
+                    searchPlatforms(r);
+                    updateTarget(r);
+                }
             }
         }
     }
 
-    public class pressThread extends Thread {
+    public class PressThread extends Thread {
         private Robot r;
-        public pressThread(Robot r){
+        public PressThread(Robot r){
             this.r = r;
         }
         public void run() {
-            for(int i = 0; i < 50; i++) {
+            while(runned) {
+                if(target == null || player == null){
+                    continue;
+                }
                 if (target.x - player.x < -15) {
                     r.keyPress(KeyEvent.VK_A);
-                    //r.mousePress(InputEvent.BUTTON1_MASK);
                     r.delay(1);
-                    //r.mouseRelease(InputEvent.BUTTON1_MASK);
                     r.keyRelease(KeyEvent.VK_A);
                 } else if (target.x - player.x > 15) {
                     r.keyPress(KeyEvent.VK_D);
-                    //r.mousePress(InputEvent.BUTTON1_MASK);
                     r.delay(1);
-                    //r.mouseRelease(InputEvent.BUTTON1_MASK);
                     r.keyRelease(KeyEvent.VK_D);
                 } else {
-                    //r.mousePress(InputEvent.BUTTON1_MASK);
                     r.delay(1);
-                    //r.mouseRelease(InputEvent.BUTTON1_MASK);
                 }
             }
         }
@@ -290,27 +278,14 @@ public class Game {
                 System.out.printf("target: %d, %d\n", target.x, target.y);
             }
             if (!r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
-                break;
+                runned = false;
             }
             if(r.getPixelColor(841, 162).equals(new Color(249, 223, 65))) {
-                Date start = new Date();
-                img = r.createScreenCapture(new Rectangle(660, 0, 600, 1080));
-                searchPlayer(r);
-                if(player == null){
-                    continue;
-                }
-                (new updateThread(r)).start();
-                Date end = new Date();
-                System.out.println(start.getTime() - end.getTime());
-                start = new Date();
-                (new pressThread(r)).start();
-                (new shootThread(r)).start();
-                end = new Date();
-                System.out.println(end.getTime() - start.getTime());
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                if(!runned){
+                    (new UpdateThread(r)).start();
+                    (new PressThread(r)).start();
+                    (new ShootThread(r)).start();
+                    runned = true;
                 }
             }
         }
